@@ -3,6 +3,7 @@ import re
 from bs4 import BeautifulSoup
 import pprint
 
+
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) '
                          'Chrome/39.0.2171.95 Safari/537.36'}
 games = {}
@@ -36,8 +37,18 @@ for i in game_urls:
     box = soup.find_all('div', class_="PredictionHeaderTeam_name__Pf64F")
     record = soup.find('table', class_="PredictionEnhancedInfo_predictionEnhancedInfo__35ubN")
     test = soup.find('div', class_="PredictionHeaderTeam_enhancedInfo__3lhgr")
-    spread = soup.find('div', class_="SelectionInfo_outcome__2Q_iV")(text=True, recursive=False)
+
+    # ----------Spread Finder
+    spread = soup.find_all('div', class_="SelectionInfo_outcome__2Q_iV")[0].get_text()
+    spread = re.split(r"-\d{3}", spread, maxsplit=0)[0]
+    #pattern = re.compile(r"[a-zA-Z]+\s[a-zA-Z\d]+\s.[\d...]+")  # Activate this to find via regex
+    #match = re.findall(pattern, spread)    # Activate this to find via regex
+
+    # ------ Odds Checker ---- #
     plusMinus = soup.find('span', class_="SelectionInfo_line__7hP17").text
+
+    # ------- Best Bet Checker -------- #
+
 
     # ------ Finds Over and Under ----- #
     oau = soup.find_all('div', class_="SelectionInfo_outcome__2Q_iV")[1].get_text()
@@ -65,4 +76,4 @@ for i in game_urls:
 
 
 pprint.pprint(games, sort_dicts=False)
-# print(games)
+
