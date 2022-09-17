@@ -8,13 +8,23 @@ headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleW
                          'Chrome/39.0.2171.95 Safari/537.36'}
 games = {}
 endUrl = 0
+
 # ---------------------------PickWise Game Grabber-------------------------------------------------#
 page = requests.get("https://www.pickswise.com/nfl/", headers={'Cache-Control': 'no-cache'})
-soup = BeautifulSoup(page.content, 'lxml')
-box = soup.find_all("div", class_="predictions_eventGrid__xDIPy")
-game_urls = []
+soup1 = BeautifulSoup(page.content, 'lxml')
+box = soup1.find_all("div", class_="predictions_eventGrid__xDIPy")
 
-# Grabs all URLs for the upcoming games and adds it to game_urls list.
+game_urls = []
+bb = []
+info = {f"Game{endUrl}": {"Record": {"team1": "",
+                                         "team2": ""},
+                              "Projected W": "",
+                              "Trust Factor": 0,
+                              "+/-": 0,
+                              }
+            }
+
+# ----- Grabs all URLs for the upcoming games and adds it to game_urls list.
 for time in box:
     links = time.find('div', class_='EventGrid_eventContainer__39T3x')
     for urls in links:
@@ -24,13 +34,6 @@ for time in box:
 # ------------Visits each game url and populated dict with info------------------------#
 for i in game_urls:
     endUrl += 1
-    info = {f"Game{endUrl}": {"Record": {"team1": "",
-                                         "team2": ""},
-                              "Projected W": "",
-                              "Trust Factor": 0,
-                              "+/-": 0,
-                              }
-            }
     # ----- Finds URLS and fills data from webpage ---- #
     updated_url = requests.get(f"https://www.pickswise.com{i}").text
     soup = BeautifulSoup(updated_url, "lxml")
@@ -38,7 +41,7 @@ for i in game_urls:
     record = soup.find('table', class_="PredictionEnhancedInfo_predictionEnhancedInfo__35ubN")
     test = soup.find('div', class_="PredictionHeaderTeam_enhancedInfo__3lhgr")
 
-    # ----------Spread Finder
+    # ----------Spread Finder ----------#
     spread = soup.find_all('div', class_="SelectionInfo_outcome__2Q_iV")[0].get_text()
     spread = re.split(r"-\d{3}", spread, maxsplit=0)[0]
     #pattern = re.compile(r"[a-zA-Z]+\s[a-zA-Z\d]+\s.[\d...]+")  # Activate this to find via regex
@@ -47,13 +50,9 @@ for i in game_urls:
     # ------ Odds Checker ---- #
     plusMinus = soup.find('span', class_="SelectionInfo_line__7hP17").text
 
-    # ------- Best Bet Checker -------- #
-
-
     # ------ Finds Over and Under ----- #
     oau = soup.find_all('div', class_="SelectionInfo_outcome__2Q_iV")[1].get_text()
     oau = oau.split('-')[0]
-
 
     # ----- Finds the home and away scores ---- #
     pom = test.find('tbody').get_text()
@@ -72,7 +71,19 @@ for i in game_urls:
     info[f"Game{endUrl}"]["Over/Under"] = oau
     games.update(info)
 
+# ------------- Best Best Checker ---------#
+bbCheck = soup1.find_all("div", class_="SelectionInfo_outcome__2Q_iV")
+for l in bbCheck:
+    l = l.text
+    l = re.split(r"-\d{3}", l, maxsplit=0)[0]
+    bb.append(l)
+    for m in range(1,endUrl + 1):
+        if l in info[f"Game{m}"]["spread"] or l in info[f"Game{m}"]["Over/Under"]:
+            info[f"Game{m}"]["Best Bet"] = l
+
+
 # ------------Gets the confidence rating for each team on PickWise-------------------
+
 
 
 pprint.pprint(games, sort_dicts=False)
